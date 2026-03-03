@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Funeral Contract Advisor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -240,6 +241,23 @@
     .msg.ai .msg-bubble { background: var(--offwhite); border: 1px solid var(--border); border-top-left-radius: 2px; }
     .msg.user .msg-bubble { background: var(--accent); color: white; border-top-right-radius: 2px; }
     .msg-bubble.typing { color: var(--muted); font-style: italic; }
+
+    /* ===== MARKDOWN RENDERING IN AI BUBBLES ===== */
+    .msg.ai .msg-bubble h2 { font-size: 1rem; font-weight: 800; color: var(--blue); margin: 16px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--soft); }
+    .msg.ai .msg-bubble h3 { font-size: .9rem; font-weight: 800; color: var(--blue2); margin: 14px 0 6px; }
+    .msg.ai .msg-bubble h4 { font-size: .85rem; font-weight: 700; color: var(--text); margin: 10px 0 4px; }
+    .msg.ai .msg-bubble p  { margin: 6px 0; line-height: 1.65; }
+    .msg.ai .msg-bubble ul, .msg.ai .msg-bubble ol { padding-left: 20px; margin: 6px 0; }
+    .msg.ai .msg-bubble li { margin: 4px 0; line-height: 1.6; }
+    .msg.ai .msg-bubble strong { font-weight: 800; color: var(--text); }
+    .msg.ai .msg-bubble em { font-style: italic; color: var(--muted); }
+    .msg.ai .msg-bubble hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+    .msg.ai .msg-bubble table { width: 100%; border-collapse: collapse; font-size: .82rem; margin: 10px 0; }
+    .msg.ai .msg-bubble th { background: var(--blue); color: white; padding: 7px 10px; text-align: left; font-size: .78rem; }
+    .msg.ai .msg-bubble td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .msg.ai .msg-bubble tr:nth-child(even) td { background: var(--offwhite); }
+    .msg.ai .msg-bubble blockquote { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--muted); margin: 8px 0; font-style: italic; }
+    .msg.ai .msg-bubble code { background: var(--soft); padding: 2px 5px; border-radius: 4px; font-size: .83rem; font-family: monospace; }
     .chat-input-area {
       background: white; border: 1px solid var(--border);
       border-radius: 0 0 14px 14px; padding: 16px;
@@ -1116,9 +1134,12 @@ function addMessage(role, text) {
   const wrap = document.getElementById('chatMessages');
   const div = document.createElement('div');
   div.className = 'msg ' + role;
+  const bubbleContent = role === 'ai'
+    ? marked.parse(text)          // render markdown for AI responses
+    : escHtml(text);              // plain text for user messages
   div.innerHTML = `
     <div class="msg-avatar">${role === 'ai' ? '🤖' : '👤'}</div>
-    <div class="msg-bubble">${escHtml(text)}</div>
+    <div class="msg-bubble">${bubbleContent}</div>
   `;
   wrap.appendChild(div);
   wrap.scrollTop = wrap.scrollHeight;
