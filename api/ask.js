@@ -304,20 +304,6 @@ function buildContractContext(data) {
   return lines.join("\n");
 }
 
-// ============================================================
-// Extract text from a base64-encoded PDF
-// ============================================================
-async function extractPdfText(base64Data) {
-  try {
-    const pdfParse = require("pdf-parse");
-    const buffer   = Buffer.from(base64Data, "base64");
-    const result   = await pdfParse(buffer);
-    return result.text || "";
-  } catch (err) {
-    console.error("PDF parse error:", err.message);
-    return null;
-  }
-}
 
 // ============================================================
 // Parse advisor CTA from AI response
@@ -402,32 +388,22 @@ module.exports = async function handler(req, res) {
     ];
 
   } else if (fileType === "pdf" && fileBase64) {
-    // PDF mode — try text extraction first
-    const pdfText = await extractPdfText(fileBase64);
-
-    if (pdfText && pdfText.trim().length > 50) {
-      // Machine-readable PDF — text extracted successfully
-      userContent = `The following is the extracted text from an uploaded funeral contract PDF. Please analyze it carefully.\n\n--- CONTRACT TEXT START ---\n${pdfText.slice(0, 12000)}\n--- CONTRACT TEXT END ---\n\n${activeQuestion}`;
-
-    } else {
-      // Scanned / image-based PDF — send directly to Claude as a document
-      // Claude natively reads PDFs including scanned ones via its vision capability
-      console.log("PDF text extraction returned empty — sending as native document to Claude");
-      userContent = [
-        {
-          type: "document",
-          source: {
-            type:       "base64",
-            media_type: "application/pdf",
-            data:       fileBase64,
-          },
+    // PDF mode — send directly to Claude as a native document
+    // Claude reads both machine-readable and scanned PDFs natively
+    userContent = [
+      {
+        type: "document",
+        source: {
+          type:       "base64",
+          media_type: "application/pdf",
+          data:       fileBase64,
         },
-        {
-          type: "text",
-          text: `This is a funeral contract PDF (may be scanned). Please read all pages carefully and analyze the contract.\n\n${activeQuestion}`,
-        },
-      ];
-    }
+      },
+      {
+        type: "text",
+        text: `This is a funeral contract PDF. Please read all pages carefully and analyze the contract.\n\n${activeQuestion}`,
+      },
+    ];
 
   } else {
     // Form data mode — plain text question, context is in system prompt

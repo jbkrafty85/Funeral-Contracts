@@ -4,8 +4,7 @@
   "description": "AI-powered funeral contract analysis tool",
   "private": true,
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.37.0",
-    "pdf-parse": "^1.1.1"
+    "@anthropic-ai/sdk": "^0.37.0"
   },
   "engines": {
     "node": ">=18"
