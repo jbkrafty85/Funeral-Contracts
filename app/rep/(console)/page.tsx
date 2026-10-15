@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
 import { audit, requireRep } from "@/lib/rep";
 import { LABELS } from "@/lib/review";
+import { formatTime } from "@/lib/site";
 
 const TABS = [
   { status: "new", label: "New" },
@@ -84,7 +85,7 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
             {rows.map((r) => (
               <tr key={r.id}>
                 <td>
-                  {new Date(r.created_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  {formatTime(r.created_at)}
                   <div className="note">{age(r.created_at)}</div>
                 </td>
                 <td>{r.contract_type === "not_sure" ? "Not sure" : LABELS[r.contract_type]}</td>

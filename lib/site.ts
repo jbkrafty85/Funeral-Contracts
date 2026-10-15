@@ -39,3 +39,10 @@ export const ALLOWED_TYPES = [
   "image/heif",
   "image/webp",
 ];
+
+// Times in the rep console are shown in the team's time zone, on the server and in the browser alike.
+export const TIME_ZONE = process.env.NEXT_PUBLIC_TIME_ZONE ?? "America/New_York";
+
+export function formatTime(iso: string) {
+  return new Date(iso).toLocaleString("en-US", { timeZone: TIME_ZONE, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}

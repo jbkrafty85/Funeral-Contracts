@@ -13,6 +13,7 @@ import {
   type LineItem,
   type ReviewDraft,
 } from "@/lib/review";
+import { formatTime } from "@/lib/site";
 
 type FileInfo = { id: string; mime_type: string; bytes: number };
 
@@ -140,7 +141,7 @@ export default function ReviewWorkspace(p: Props) {
           <div>
             <h1>Review</h1>
             <p className="note">
-              Received {new Date(p.receivedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · family chose{" "}
+              Received {formatTime(p.receivedAt)} · family chose{" "}
               {p.familyContractType === "not_sure" ? "Not sure" : LABELS[p.familyContractType]}
             </p>
           </div>
@@ -307,7 +308,7 @@ export default function ReviewWorkspace(p: Props) {
               <button className="linklike" type="submit">Return to queue</button>
             </form>
           </div>
-          {savedAt && <p className="note">Last saved {new Date(savedAt).toLocaleString()}</p>}
+          {savedAt && <p className="note">Last saved {formatTime(savedAt)}</p>}
         </div>
       </section>
     </div>
