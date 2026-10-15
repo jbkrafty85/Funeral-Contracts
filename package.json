@@ -1,11 +1,9 @@
 {
   "name": "funeral-contract-advisor",
   "version": "1.0.0",
-  "description": "AI-powered funeral contract analysis tool",
+  "description": "Free funeral, cemetery and preneed contract review (coming soon)",
   "private": true,
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.37.0"
-  },
+  "dependencies": {},
   "engines": {
     "node": ">=18"
   }
