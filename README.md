@@ -21,7 +21,7 @@ Build plan: https://claude.ai/artifact/9oaLEZXsQAMXKT1m3WSuDi — structure and 
 
 1. Storage → connect **Neon** (adds `DATABASE_URL`) and create a **private Blob** store (adds `BLOB_READ_WRITE_TOKEN`).
 2. Settings → Environment Variables: add the rest from `.env.example`.
-3. Run the schema once: `DATABASE_URL=... npm run db:migrate`
+3. Migrations run automatically on every Vercel deploy (`vercel-build`).
 4. Firewall → enable BotID.
 
 ## Local development
