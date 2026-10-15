@@ -16,6 +16,9 @@ Build plan: https://claude.ai/artifact/9oaLEZXsQAMXKT1m3WSuDi — structure and 
 - Phase 0 — done: public AI chat and `/api/ask` removed (the old prompt is in git at `67c532c:api/ask.js`).
 - Phase 1 — public intake: homepage, `/submit` form, private Blob uploads, `submissions` + `submission_files`,
   BotID + per-IP rate limit, email/text confirmation.
+- Phase 2 — rep console at `/rep`: Microsoft 365 sign-in (reps table allowlist), queue with claim,
+  review screen (contract viewer + structured form), AI assist (Claude Opus 5.5 + `lib/ai/knowledge-base.ts`),
+  PII scan + "no personal details" checkbox. Send is wired in Phase 3.
 
 ## Setup (Vercel)
 

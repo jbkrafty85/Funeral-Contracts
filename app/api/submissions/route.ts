@@ -55,8 +55,8 @@ export async function POST(request: Request) {
       db`INSERT INTO submissions (id, contact_method, contact_value, consent_version, consent_at, contract_type)
          VALUES (${id}, ${contactMethod}, ${contact}, ${CONSENT_VERSION}, now(), ${contractType})`,
       ...blobs.map(
-        (b) => db`INSERT INTO submission_files (submission_id, blob_key, mime_type, bytes)
-                  VALUES (${id}, ${b.pathname}, ${b.contentType}, ${b.size})`,
+        (b, i) => db`INSERT INTO submission_files (submission_id, blob_key, mime_type, bytes, position)
+                     VALUES (${id}, ${b.pathname}, ${b.contentType}, ${b.size}, ${i})`,
       ),
       db`INSERT INTO audit_log (action, submission_id, detail) VALUES ('submit', ${id}, ${`files=${blobs.length}`})`,
     ]);
