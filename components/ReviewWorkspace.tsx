@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { scanPii, type PiiFinding } from "@/lib/pii";
 import {
@@ -10,6 +11,7 @@ import {
   REVIEW_CONTRACT_TYPES,
   SERVICE_TYPES,
   sendBlockers,
+  trainingText,
   type LineItem,
   type ReviewDraft,
 } from "@/lib/review";
@@ -38,7 +40,8 @@ export default function ReviewWorkspace(p: Props) {
   const [fileIdx, setFileIdx] = useState(0);
   const [dirty, setDirty] = useState(false);
   const [savedAt, setSavedAt] = useState(p.draftSavedAt);
-  const [busy, setBusy] = useState<"" | "save" | "assist">("");
+  const [busy, setBusy] = useState<"" | "save" | "assist" | "send">("");
+  const router = useRouter();
   const [msg, setMsg] = useState<{ kind: "ok" | "error" | "warn"; text: string } | null>(null);
   const [assistNotes, setAssistNotes] = useState<string[]>([]);
   const [noPii, setNoPii] = useState(false);
@@ -53,7 +56,7 @@ export default function ReviewWorkspace(p: Props) {
     update({ line_items: d.line_items.map((li, j) => (j === i ? { ...li, ...patch } : li)) });
   }
 
-  const pii: PiiFinding[] = useMemo(() => scanPii(d.advice), [d.advice]);
+  const pii: PiiFinding[] = useMemo(() => scanPii(trainingText(d)), [d]);
   const blockers = sendBlockers(d);
   const itemsTotal = d.line_items.reduce((n, li) => n + (li.price ?? 0), 0);
   const canSend = blockers.length === 0 && pii.length === 0 && noPii;
@@ -101,6 +104,26 @@ export default function ReviewWorkspace(p: Props) {
     } catch (e) {
       setMsg({ kind: "error", text: e instanceof Error ? e.message : "AI assist failed" });
     } finally {
+      setBusy("");
+    }
+  }
+
+  async function send() {
+    if (!confirm("Send this review to the family now? The uploaded contract will be deleted and the training record saved. This can't be undone.")) return;
+    setBusy("send");
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/rep/send/${p.submissionId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ draft: d, confirmNoPii: noPii }),
+      });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Send failed");
+      setDirty(false);
+      router.push(`/rep?status=sent&sent=${body.delivered ? "delivered" : "undelivered"}`);
+    } catch (e) {
+      setMsg({ kind: "error", text: e instanceof Error ? e.message : "Send failed" });
       setBusy("");
     }
   }
@@ -283,7 +306,7 @@ export default function ReviewWorkspace(p: Props) {
           <textarea rows={16} value={d.advice} onChange={(e) => update({ advice: e.target.value })} />
           {pii.length > 0 && (
             <div className="pii">
-              <strong>Possible personal details — remove before sending:</strong>
+              <strong>Possible personal details in the review — remove before sending:</strong>
               <ul>{pii.map((f, i) => <li key={i}>{f.kind}: “{f.match}”</li>)}</ul>
             </div>
           )}
@@ -299,8 +322,8 @@ export default function ReviewWorkspace(p: Props) {
             <button className="button secondary" type="button" onClick={save} disabled={busy !== "" || !dirty}>
               {busy === "save" ? "Saving…" : dirty ? "Save draft" : "Saved"}
             </button>
-            <button className="button" type="button" disabled title="Delivery to the family arrives in Phase 3">
-              Send to family {canSend ? "(Phase 3)" : ""}
+            <button className="button" type="button" onClick={send} disabled={busy !== "" || !canSend}>
+              {busy === "send" ? "Sending…" : "Send to family"}
             </button>
             <span className="spacer" />
             <form action={p.releaseAction}>

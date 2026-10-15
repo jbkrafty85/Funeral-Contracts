@@ -18,7 +18,10 @@ Build plan: https://claude.ai/artifact/9oaLEZXsQAMXKT1m3WSuDi — structure and 
   BotID + per-IP rate limit, email/text confirmation.
 - Phase 2 — rep console at `/rep`: Microsoft 365 sign-in (reps table allowlist), queue with claim,
   review screen (contract viewer + structured form), AI assist (Claude Opus 5.5 + `lib/ai/knowledge-base.ts`),
-  PII scan + "no personal details" checkbox. Send is wired in Phase 3.
+  PII scan + "no personal details" checkbox.
+- Phase 3 — Send writes the training records (fresh ids, no link back), deletes the uploads, and
+  emails/texts a link to `/r/<token>` (30 days). Daily cron `/api/cron/purge` (08:00 UTC, production
+  only) wipes contact info 7 days after sending, result pages after 30, leftover/orphan uploads.
 
 ## Setup (Vercel)
 

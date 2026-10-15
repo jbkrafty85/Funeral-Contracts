@@ -136,3 +136,35 @@ export function sendBlockers(d: ReviewDraft): string[] {
   if (!d.advice.trim()) out.push("Write the advice to the family.");
   return out;
 }
+
+// Every free-text field that ends up in the training tables. All of it is PII-scanned before Send.
+export function trainingText(d: ReviewDraft): string {
+  return [d.advice, ...d.red_flags, ...d.line_items.flatMap((li) => [li.description, li.flag_reason ?? ""])].join("\n");
+}
+
+// What the family's review page shows. Stored on the submission (intake zone) for 30 days.
+export type ReviewResult = {
+  sent_at: string;
+  seller: { name: string; city: string | null; state: string | null };
+  contract_type: ReviewDraft["contract_type"];
+  service_type: ReviewDraft["service_type"];
+  line_items: LineItem[];
+  contract_total: number | null;
+  est_savings: number | null;
+  red_flags: string[];
+  advice: string;
+};
+
+export function toResult(d: ReviewDraft, sentAt: Date): ReviewResult {
+  return {
+    sent_at: sentAt.toISOString(),
+    seller: { name: d.provider.name.trim(), city: d.provider.city, state: d.provider.state },
+    contract_type: d.contract_type,
+    service_type: d.service_type,
+    line_items: d.line_items,
+    contract_total: d.contract_total,
+    est_savings: d.est_savings,
+    red_flags: d.red_flags,
+    advice: d.advice.trim(),
+  };
+}

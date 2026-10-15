@@ -18,6 +18,24 @@ export async function sendReceived(method: "email" | "sms", to: string) {
   }
 }
 
+// The review itself never goes in the message — only a link to the 30-day page.
+export async function sendReviewReady(method: "email" | "sms", to: string, url: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const text =
+    method === "email"
+      ? `Your free contract review is ready.\n\nRead it here: ${url}\n\nThis link works for 30 days, so you may want to save or print the page. ` +
+        `The review is informational and is not legal or financial advice.\n\n— ${SITE_NAME}`
+      : `Your free contract review is ready: ${url} (link works for 30 days) — ${SITE_NAME}`;
+  try {
+    if (method === "email") await sendEmail(to, `Your contract review is ready — ${SITE_NAME}`, text);
+    else await sendSms(to, text);
+    return { ok: true };
+  } catch (err) {
+    const error = err instanceof Error ? err.message.slice(0, 200) : "unknown error";
+    console.error(`notify: ${method} review delivery failed:`, error);
+    return { ok: false, error };
+  }
+}
+
 async function sendEmail(to: string, subject: string, text: string) {
   const key = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM; // e.g. "Funeral Contract Review <reviews@yourdomain.com>"

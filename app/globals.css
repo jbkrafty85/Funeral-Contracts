@@ -171,3 +171,17 @@ table.items tr.flagged td { background: color-mix(in srgb, var(--danger) 8%, tra
   .viewer { height: 70vh; border-right: 0; border-bottom: 1px solid var(--line); }
   .grid3 { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Family's review page ───────────────────────────────────── */
+.result { max-width: 820px; }
+.result section { margin-top: 28px; }
+.stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin: 20px 0 8px; }
+.stat { flex: 1 1 160px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 4px; }
+.stat strong { font: 600 1.5rem var(--serif); }
+.advice { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; }
+.advice p:last-child { margin-bottom: 0; }
+.result-table tr.flagged td { background: color-mix(in srgb, var(--danger) 7%, transparent); }
+@media print {
+  .site-header, .site-footer { display: none; }
+  body { background: #fff; color: #000; }
+}
