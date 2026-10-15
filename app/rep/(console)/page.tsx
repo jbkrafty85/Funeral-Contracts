@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { sql } from "@/lib/db";
 import { audit, requireRep } from "@/lib/rep";
 import { LABELS } from "@/lib/review";
+import { runPurge } from "@/lib/purge";
 import { deliver } from "@/lib/send";
 import { formatTime } from "@/lib/site";
 
@@ -25,7 +26,22 @@ type Row = {
   delivered_at: string | null;
   delivery_error: string | null;
   can_resend: boolean;
+  result_token: string | null;
+  status: string;
 };
+
+// Admins: delete a family's contact info now instead of waiting the 7 days (e.g. they asked).
+// Runs the same job as the daily cron.
+async function purgeNow(formData: FormData) {
+  "use server";
+  const rep = await requireRep();
+  if (rep.role !== "admin") return;
+  const id = String(formData.get("id"));
+  await sql()`UPDATE submissions SET purge_after = now() WHERE id = ${id} AND status = 'sent'`;
+  await audit(rep.id, "purge_now", id);
+  await runPurge();
+  revalidatePath("/rep");
+}
 
 async function resend(formData: FormData) {
   "use server";
@@ -81,7 +97,7 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
   const rows = (await sql()`
     SELECT s.id, s.created_at, s.contract_type::text, s.claimed_by, r.display_name AS claimed_name,
            (SELECT count(*)::int FROM submission_files f WHERE f.submission_id = s.id) AS files,
-           s.sent_at, s.delivered_at, s.delivery_error,
+           s.sent_at, s.delivered_at, s.delivery_error, s.result_token, s.status::text,
            (s.status = 'sent' AND s.contact_value IS NOT NULL AND s.result_token IS NOT NULL) AS can_resend
     FROM submissions s LEFT JOIN reps r ON r.id = s.claimed_by
     WHERE s.status = ${status} OR (${status} = 'sent' AND s.status = 'purged')
@@ -130,7 +146,9 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
                 <td>{r.claimed_name ?? "—"}</td>
                 {status === "sent" && (
                   <td>
-                    {r.delivered_at ? (
+                    {r.status === "purged" ? (
+                      <span className="note">Contact info deleted</span>
+                    ) : r.delivered_at ? (
                       "Delivered"
                     ) : (
                       <span className="error" style={{ fontWeight: 500 }}>Not delivered{r.delivery_error ? `: ${r.delivery_error}` : ""}</span>
@@ -147,12 +165,23 @@ export default async function QueuePage({ searchParams }: { searchParams: Promis
                   {status === "in_review" && (r.claimed_by === rep.id || rep.role === "admin") && (
                     <Link className="button small secondary" href={`/rep/review/${r.id}`}>Open</Link>
                   )}
+                  <div className="row-actions">
+                  {status === "sent" && r.result_token && (
+                    <a className="button small secondary" href={`/r/${r.result_token}`} target="_blank" rel="noreferrer">View</a>
+                  )}
+                  {status === "sent" && rep.role === "admin" && r.status === "sent" && (
+                    <form action={purgeNow}>
+                      <input type="hidden" name="id" value={r.id} />
+                      <button className="linklike" type="submit" title="Delete this family's contact info now">Purge now</button>
+                    </form>
+                  )}
                   {status === "sent" && !r.delivered_at && r.can_resend && (r.claimed_by === rep.id || rep.role === "admin") && (
                     <form action={resend}>
                       <input type="hidden" name="id" value={r.id} />
                       <button className="button small secondary" type="submit">Resend</button>
                     </form>
                   )}
+                  </div>
                 </td>
               </tr>
             ))}

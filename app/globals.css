@@ -185,3 +185,4 @@ table.items tr.flagged td { background: color-mix(in srgb, var(--danger) 8%, tra
   .site-header, .site-footer { display: none; }
   body { background: #fff; color: #000; }
 }
+.row-actions { display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
