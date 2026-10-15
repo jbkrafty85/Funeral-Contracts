@@ -6,7 +6,11 @@ import { sql } from "@/lib/db";
 // names your tenant), so only your organization's Microsoft 365 accounts can get this far;
 // on top of that, the account must be listed in the reps table.
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [MicrosoftEntraID],
+  providers: [
+    // Microsoft's discovery document says ".../v2.0" with no trailing slash, and the issuer
+    // must match exactly — so accept the value with or without one.
+    MicrosoftEntraID({ issuer: process.env.AUTH_MICROSOFT_ENTRA_ID_ISSUER?.trim().replace(/\/+$/, "") }),
+  ],
   session: { strategy: "jwt", maxAge: 12 * 60 * 60 },
   pages: { signIn: "/rep/signin", error: "/rep/signin" },
   callbacks: {
