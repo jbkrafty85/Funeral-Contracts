@@ -44,6 +44,7 @@ export default function ReviewWorkspace(p: Props) {
   const router = useRouter();
   const [msg, setMsg] = useState<{ kind: "ok" | "error" | "warn"; text: string } | null>(null);
   const [assistNotes, setAssistNotes] = useState<string[]>([]);
+  const [aiNoDate, setAiNoDate] = useState(false);
   const [noPii, setNoPii] = useState(false);
   const [flagsText, setFlagsText] = useState(p.initialDraft.red_flags.join("\n"));
 
@@ -100,6 +101,7 @@ export default function ReviewWorkspace(p: Props) {
       if (body.fallbackModel) notes.push(`Answered by a fallback model (${body.fallbackModel}).`);
       if (body.piiWarnings?.length) notes.push("The AI draft may contain personal details — see the warnings under the advice.");
       setAssistNotes(notes);
+      setAiNoDate(!body.draft.contract_month);
       setMsg({ kind: "ok", text: "AI draft filled in. Check every field against the contract before saving." });
     } catch (e) {
       setMsg({ kind: "error", text: e instanceof Error ? e.message : "AI assist failed" });
@@ -209,7 +211,18 @@ export default function ReviewWorkspace(p: Props) {
                 {SERVICE_TYPES.map((t) => <option key={t} value={t}>{LABELS[t]}</option>)}
               </select>
             </label>
-            <label>Month signed<input type="month" value={d.contract_month ?? ""} onChange={(e) => update({ contract_month: e.target.value || null })} /></label>
+            <label>
+              Month signed
+              <input
+                type="month"
+                value={d.contract_month ?? ""}
+                className={aiNoDate && !d.contract_month ? "needs-input" : undefined}
+                onChange={(e) => update({ contract_month: e.target.value || null })}
+              />
+              {aiNoDate && !d.contract_month && (
+                <span className="field-warn">No date found on the contract. Enter it from the paperwork.</span>
+              )}
+            </label>
           </div>
         </fieldset>
 

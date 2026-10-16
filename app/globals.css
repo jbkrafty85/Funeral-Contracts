@@ -186,3 +186,6 @@ table.items tr.flagged td { background: color-mix(in srgb, var(--danger) 8%, tra
   body { background: #fff; color: #000; }
 }
 .row-actions { display: flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+.console input.needs-input { border-color: #c98a00; box-shadow: 0 0 0 2px color-mix(in srgb, #c98a00 25%, transparent); }
+.field-warn { color: #8a5a00; font-weight: 500; font-size: .82rem; }
+@media (prefers-color-scheme: dark) { .field-warn { color: #ffd88a; } }
