@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import ReviewWorkspace from "@/components/ReviewWorkspace";
 import { sql } from "@/lib/db";
 import { audit, loadForEdit, requireRep } from "@/lib/rep";
-import { emptyDraft, ReviewDraft } from "@/lib/review";
+import { emptyDraft, ReviewDraft, upgradeDraft } from "@/lib/review";
 
 async function release(formData: FormData) {
   "use server";
@@ -29,7 +29,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ id: str
     SELECT id, mime_type, bytes FROM submission_files WHERE submission_id = ${id} ORDER BY position
   `) as { id: string; mime_type: string; bytes: number }[];
 
-  const saved = ReviewDraft.safeParse(s.draft);
+  const saved = ReviewDraft.safeParse(upgradeDraft(s.draft));
   const draft = saved.success ? saved.data : emptyDraft(s.contract_type);
 
   return (

@@ -15,7 +15,7 @@ export type TrainingRecord = {
   reviewer_code: string;
   line_items: { category: string; description: string; price: number | null; flagged: boolean; flag_reason: string | null }[];
   advice: string;
-  red_flags: string[];
+  red_flags: { category: string; note: string | null }[];
   ftc_issue: boolean;
   preneed: {
     funding: string | null;
@@ -33,7 +33,7 @@ const num = (v: unknown) => (v == null ? null : Number(v));
 export async function loadTrainingRecords(opts: { id?: string } = {}): Promise<TrainingRecord[]> {
   const db = sql();
   const id = opts.id ?? null;
-  const [reviews, items, advice, preneed] = (await Promise.all([
+  const [reviews, items, advice, preneed, flags] = (await Promise.all([
     db`SELECT r.id, r.created_at::text, r.contract_month, r.contract_type::text, r.service_type, r.contract_total, r.est_savings,
               r.reviewer_code, r.spot_check, p.name AS p_name, p.type AS p_type, p.city AS p_city, p.state AS p_state,
               sc.verdict, sc.checker_code, sc.notes AS sc_notes
@@ -44,8 +44,9 @@ export async function loadTrainingRecords(opts: { id?: string } = {}): Promise<T
        ORDER BY r.created_at, r.contract_month`,
     db`SELECT review_id, category, description, price, flagged, flag_reason FROM line_items
        WHERE ${id}::uuid IS NULL OR review_id = ${id}::uuid ORDER BY review_id, id`,
-    db`SELECT review_id, advice_text, red_flags, ftc_issue FROM review_advice WHERE ${id}::uuid IS NULL OR review_id = ${id}::uuid`,
+    db`SELECT review_id, advice_text, ftc_issue FROM review_advice WHERE ${id}::uuid IS NULL OR review_id = ${id}::uuid`,
     db`SELECT * FROM preneed_terms WHERE ${id}::uuid IS NULL OR review_id = ${id}::uuid`,
+    db`SELECT review_id, category, note FROM red_flags WHERE ${id}::uuid IS NULL OR review_id = ${id}::uuid ORDER BY review_id, id`,
   ])) as Record<string, unknown>[][];
 
   const byReview = <T,>(rows: Record<string, unknown>[], map: (r: Record<string, unknown>) => T) => {
@@ -63,6 +64,7 @@ export async function loadTrainingRecords(opts: { id?: string } = {}): Promise<T
     flagged: r.flagged as boolean,
     flag_reason: (r.flag_reason as string | null) ?? null,
   }));
+  const flagMap = byReview(flags, (r) => ({ category: r.category as string, note: (r.note as string | null) ?? null }));
   const adviceMap = new Map(advice.map((a) => [a.review_id as string, a]));
   const preneedMap = new Map(preneed.map((p) => [p.review_id as string, p]));
 
@@ -83,7 +85,7 @@ export async function loadTrainingRecords(opts: { id?: string } = {}): Promise<T
       reviewer_code: r.reviewer_code as string,
       line_items: itemMap.get(r.id as string) ?? [],
       advice: (a?.advice_text as string) ?? "",
-      red_flags: (a?.red_flags as string[]) ?? [],
+      red_flags: flagMap.get(r.id as string) ?? [],
       ftc_issue: Boolean(a?.ftc_issue),
       preneed: p
         ? {

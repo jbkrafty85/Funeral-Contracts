@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { sql } from "@/lib/db";
 import { requireRep } from "@/lib/rep";
-import { LABELS } from "@/lib/review";
+import { LABELS, RED_FLAG_LABELS } from "@/lib/review";
 
 const usd = (n: number | null | undefined) => (n == null ? "—" : Math.round(n).toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }));
 const n = (v: unknown) => (v == null ? null : Number(v));
@@ -44,8 +44,8 @@ export default async function StatsPage() {
               percentile_cont(0.5) WITHIN GROUP (ORDER BY price) AS median_price,
               avg(CASE WHEN flagged THEN 1.0 ELSE 0 END) AS flagged_share
        FROM line_items WHERE price IS NOT NULL GROUP BY 1 ORDER BY items DESC`,
-    db`SELECT lower(trim(f)) AS key, count(*)::int AS value FROM review_advice, unnest(red_flags) AS f
-       GROUP BY 1 ORDER BY 2 DESC LIMIT 15`,
+    db`SELECT category AS key, count(DISTINCT review_id)::int AS value FROM red_flags
+       GROUP BY 1 ORDER BY 2 DESC LIMIT 16`,
     db`SELECT count(*) FILTER (WHERE r.spot_check)::int AS selected, count(sc.review_id)::int AS checked,
               count(*) FILTER (WHERE sc.verdict = 'ok')::int AS ok, count(*) FILTER (WHERE sc.verdict = 'minor')::int AS minor,
               count(*) FILTER (WHERE sc.verdict = 'major')::int AS major
@@ -84,7 +84,15 @@ export default async function StatsPage() {
         </section>
         <section className="group">
           <h2>Top red flags</h2>
-          {flags.length ? <Bars rows={flags as { key: string; value: number }[]} label="Top red flags" /> : <p className="note">No data yet.</p>}
+          <p className="note" style={{ marginTop: -8 }}>Number of reviews with each kind of flag</p>
+          {flags.length ? (
+            <Bars
+              rows={(flags as { key: string; value: number }[]).map((f) => ({ key: RED_FLAG_LABELS[f.key as keyof typeof RED_FLAG_LABELS] ?? f.key, value: f.value }))}
+              label="Top red flags"
+            />
+          ) : (
+            <p className="note">No data yet.</p>
+          )}
         </section>
       </div>
 

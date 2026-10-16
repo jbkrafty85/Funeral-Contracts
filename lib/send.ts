@@ -67,9 +67,16 @@ export async function performSend(rep: Rep, id: string, body: unknown, requestUr
                  SELECT ${reviewId}, ${li.category}, ${li.description.trim()}, ${li.price}, ${li.flagged}, ${li.flagged ? li.flag_reason : null}
                  WHERE EXISTS (SELECT 1 FROM contract_reviews WHERE id = ${reviewId})`,
     ),
-    db`INSERT INTO review_advice (review_id, advice_text, red_flags, ftc_issue)
-       SELECT ${reviewId}, ${d.advice.trim()}, ${d.red_flags}, ${d.ftc_issue}
+    db`INSERT INTO review_advice (review_id, advice_text, ftc_issue)
+       SELECT ${reviewId}, ${d.advice.trim()}, ${d.ftc_issue}
        WHERE EXISTS (SELECT 1 FROM contract_reviews WHERE id = ${reviewId})`,
+    ...d.red_flags
+      .filter((f) => f.note.trim() || f.category !== "other")
+      .map(
+        (f) => db`INSERT INTO red_flags (review_id, category, note)
+                  SELECT ${reviewId}, ${f.category}, ${f.note.trim() || null}
+                  WHERE EXISTS (SELECT 1 FROM contract_reviews WHERE id = ${reviewId})`,
+      ),
     ...(d.contract_type === "preneed" && d.preneed
       ? [
           db`INSERT INTO preneed_terms (review_id, funding, price_guaranteed, transferable, cancellation_refund_pct, finance_charges, state)

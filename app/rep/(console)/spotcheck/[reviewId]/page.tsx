@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { sql } from "@/lib/db";
 import { scanPii } from "@/lib/pii";
 import { audit, requireRep } from "@/lib/rep";
-import { LABELS } from "@/lib/review";
+import { LABELS, RED_FLAG_LABELS } from "@/lib/review";
 import { loadTrainingRecords } from "@/lib/training";
 
 const usd = (n: number | null) => (n == null ? "—" : n.toLocaleString("en-US", { style: "currency", currency: "USD" }));
@@ -86,7 +86,7 @@ export default async function SpotCheckPage({ params, searchParams }: { params: 
       )}
 
       <h2 style={{ marginTop: 24 }}>Red flags {r.ftc_issue && <span className="note">(possible FTC issue)</span>}</h2>
-      {r.red_flags.length ? <ul>{r.red_flags.map((f, i) => <li key={i}>{f}</li>)}</ul> : <p className="note">None</p>}
+      {r.red_flags.length ? <ul>{r.red_flags.map((f, i) => <li key={i}><strong>{RED_FLAG_LABELS[f.category as keyof typeof RED_FLAG_LABELS] ?? f.category}</strong>{f.note ? ` — ${f.note}` : ""}</li>)}</ul> : <p className="note">None</p>}
 
       <h2 style={{ marginTop: 24 }}>Advice</h2>
       <div className="advice">{r.advice.split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}</div>

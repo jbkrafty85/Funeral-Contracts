@@ -8,11 +8,14 @@ import {
   LABELS,
   LINE_CATEGORIES,
   PROVIDER_TYPES,
+  RED_FLAG_CATEGORIES,
+  RED_FLAG_LABELS,
   REVIEW_CONTRACT_TYPES,
   SERVICE_TYPES,
   sendBlockers,
   trainingText,
   type LineItem,
+  type RedFlag,
   type ReviewDraft,
 } from "@/lib/review";
 import { formatTime } from "@/lib/site";
@@ -46,12 +49,14 @@ export default function ReviewWorkspace(p: Props) {
   const [assistNotes, setAssistNotes] = useState<string[]>([]);
   const [aiNoDate, setAiNoDate] = useState(false);
   const [noPii, setNoPii] = useState(false);
-  const [flagsText, setFlagsText] = useState(p.initialDraft.red_flags.join("\n"));
 
   function update(patch: Partial<ReviewDraft>) {
     setD((cur) => ({ ...cur, ...patch }));
     setDirty(true);
     setNoPii(false);
+  }
+  function updateFlag(i: number, patch: Partial<RedFlag>) {
+    update({ red_flags: d.red_flags.map((f, j) => (j === i ? { ...f, ...patch } : f)) });
   }
   function updateItem(i: number, patch: Partial<LineItem>) {
     update({ line_items: d.line_items.map((li, j) => (j === i ? { ...li, ...patch } : li)) });
@@ -93,7 +98,6 @@ export default function ReviewWorkspace(p: Props) {
       const body = await res.json();
       if (!res.ok) throw new Error(body.error ?? "AI assist failed");
       setD(body.draft);
-      setFlagsText(body.draft.red_flags.join("\n"));
       setDirty(true);
       setNoPii(false);
       const notes: string[] = [];
@@ -301,15 +305,29 @@ export default function ReviewWorkspace(p: Props) {
 
         <fieldset className="group">
           <legend>Red flags</legend>
-          <textarea
-            rows={3}
-            value={flagsText}
-            placeholder="One per line"
-            onChange={(e) => {
-              setFlagsText(e.target.value);
-              update({ red_flags: e.target.value.split("\n").map((s) => s.trim()).filter(Boolean) });
-            }}
-          />
+          {d.red_flags.length > 0 && (
+            <table className="items">
+              <thead>
+                <tr><th>Category</th><th>Note (item and amount)</th><th /></tr>
+              </thead>
+              <tbody>
+                {d.red_flags.map((f, i) => (
+                  <tr key={i}>
+                    <td style={{ width: 230 }}>
+                      <select value={f.category} onChange={(e) => updateFlag(i, { category: e.target.value as RedFlag["category"] })} aria-label="Red flag category">
+                        {RED_FLAG_CATEGORIES.map((c) => <option key={c} value={c}>{RED_FLAG_LABELS[c]}</option>)}
+                      </select>
+                    </td>
+                    <td><input value={f.note} onChange={(e) => updateFlag(i, { note: e.target.value })} aria-label="Red flag note" /></td>
+                    <td><button type="button" className="linklike" onClick={() => update({ red_flags: d.red_flags.filter((_, j) => j !== i) })}>Remove</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          <button type="button" className="button small secondary" onClick={() => update({ red_flags: [...d.red_flags, { category: "other", note: "" }] })}>
+            Add red flag
+          </button>
           <label className="check"><input type="checkbox" checked={d.ftc_issue} onChange={(e) => update({ ftc_issue: e.target.checked })} /> Possible FTC Funeral Rule issue</label>
         </fieldset>
 

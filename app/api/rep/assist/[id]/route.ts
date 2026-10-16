@@ -24,6 +24,6 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   // Belt and braces: the prompt forbids personal details, but flag anything that slipped through.
   const d = result.draft;
-  const piiWarnings = scanPii([d.advice, ...d.line_items.map((li) => li.description), ...d.red_flags].join("\n"));
+  const piiWarnings = scanPii([d.advice, ...d.line_items.map((li) => li.description), ...d.red_flags.map((f) => f.note)].join("\n"));
   return Response.json({ draft: d, skipped: result.skipped, fallbackModel: result.fallbackModel, piiWarnings });
 }

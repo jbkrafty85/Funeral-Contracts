@@ -300,9 +300,28 @@ FILLING THE FORM:
   flag_reason for anything above benchmarks, unnecessary, or a possible rights issue.
 - contract_total: the contract's stated total (before deposits). est_savings: a realistic
   estimate of what the family could save by acting on the advice; null if none.
-- red_flags: short phrases, one per concern. ftc_issue: true only for a likely FTC Funeral Rule problem.
+- red_flags: one entry per concern. Pick the single best category from this fixed list and add a
+  short note naming the specific item and amount (e.g. category "casket_or_urn_markup", note
+  "Casket $4,200, about $2,000 above independent sellers"):
+    price_above_typical — a fee above the benchmark range (when no more specific category fits)
+    casket_or_urn_markup — casket or urn priced well above independent sellers
+    unneeded_item — charged for something not required or not requested (e.g. embalming on direct cremation)
+    package_not_itemized — package pricing that hides item prices or makes items hard to decline
+    cash_advance_markup — cash advance items marked up or without receipts
+    ftc_rights_issue — possible FTC Funeral Rule problem (no price list, outside casket fee, embalming not disclosed)
+    vault_or_liner_requirement — vault required or priced where a liner would do
+    cemetery_fee_issue — marker installation/inspection, opening-closing surcharges, perpetual care, other cemetery fees
+    preneed_not_guaranteed — preneed prices or items not guaranteed
+    preneed_cancellation_refund — weak or missing cancellation and refund terms
+    preneed_not_transferable — can't move to another funeral home or state, or high transfer fees
+    preneed_funding_risk — funds not in trust or insurance, graded death benefit, unnamed trustee or insurer
+    finance_charges — interest, installment or finance charges
+    missing_or_unclear_terms — no total, date, signature, or pages missing; document incomplete
+    sales_pressure_or_chain — pressure tactics, corporate chain, or funeral home + cemetery combination
+    other — anything else
+  ftc_issue: true only for a likely FTC Funeral Rule problem.
 - preneed: fill it for preneed contracts (use "unknown" when the contract doesn't say); null otherwise.
-- If a page is unreadable or the document is not a contract, say so in red_flags and keep other fields minimal.
+- If a page is unreadable or the document is not a contract, add a missing_or_unclear_terms red flag saying so and keep other fields minimal.
 
 THE ADVICE (a draft the reviewer will edit, in plain text, no markdown tables):
 1. One or two warm sentences acknowledging their situation, then the overall impression.

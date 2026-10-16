@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { sql } from "@/lib/db";
-import { LABELS, type ReviewResult } from "@/lib/review";
+import { LABELS, RED_FLAG_LABELS, type ReviewResult } from "@/lib/review";
 import { TIME_ZONE } from "@/lib/site";
 
 export const metadata: Metadata = { title: "Your contract review", robots: { index: false, follow: false } };
@@ -59,7 +59,7 @@ export default async function ReviewResultPage({ params }: { params: Promise<{ t
       {r.red_flags.length > 0 && (
         <section>
           <h2>Things to ask about</h2>
-          <ul>{r.red_flags.map((f, i) => <li key={i}>{f}</li>)}</ul>
+          <ul>{r.red_flags.map((f, i) => <li key={i}>{typeof f === "string" ? f : f.note || RED_FLAG_LABELS[f.category]}</li>)}</ul>
         </section>
       )}
 

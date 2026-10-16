@@ -29,6 +29,46 @@ export const LINE_CATEGORIES = [
 ] as const;
 export const REVIEW_CONTRACT_TYPES = ["funeral", "cemetery", "preneed"] as const;
 
+// Fixed red-flag categories so "top red flags" counts real trends. Keep in sync with the
+// CHECK constraint in db/migrations/006_red_flag_categories.sql.
+export const RED_FLAG_CATEGORIES = [
+  "price_above_typical",
+  "casket_or_urn_markup",
+  "unneeded_item",
+  "package_not_itemized",
+  "cash_advance_markup",
+  "ftc_rights_issue",
+  "vault_or_liner_requirement",
+  "cemetery_fee_issue",
+  "preneed_not_guaranteed",
+  "preneed_cancellation_refund",
+  "preneed_not_transferable",
+  "preneed_funding_risk",
+  "finance_charges",
+  "missing_or_unclear_terms",
+  "sales_pressure_or_chain",
+  "other",
+] as const;
+
+export const RED_FLAG_LABELS: Record<(typeof RED_FLAG_CATEGORIES)[number], string> = {
+  price_above_typical: "Price above typical range",
+  casket_or_urn_markup: "Casket or urn markup",
+  unneeded_item: "Item not needed or not requested",
+  package_not_itemized: "Package pricing / not itemized",
+  cash_advance_markup: "Cash advance markup",
+  ftc_rights_issue: "FTC Funeral Rule rights issue",
+  vault_or_liner_requirement: "Vault or liner requirement",
+  cemetery_fee_issue: "Cemetery fee issue",
+  preneed_not_guaranteed: "Preneed price not guaranteed",
+  preneed_cancellation_refund: "Preneed cancellation or refund terms",
+  preneed_not_transferable: "Preneed not transferable",
+  preneed_funding_risk: "Preneed funding risk",
+  finance_charges: "Finance or installment charges",
+  missing_or_unclear_terms: "Missing or unclear terms",
+  sales_pressure_or_chain: "Sales pressure or chain/combo seller",
+  other: "Other",
+};
+
 export const LABELS: Record<string, string> = {
   funeral_home: "Funeral home",
   cemetery: "Cemetery",
@@ -71,6 +111,11 @@ export const LineItem = z.object({
   flag_reason: z.string().nullable(),
 });
 
+export const RedFlag = z.object({
+  category: z.enum(RED_FLAG_CATEGORIES),
+  note: z.string(),
+});
+
 export const PreneedTerms = z.object({
   funding: z.enum(["trust", "insurance", "installment", "unknown"]),
   price_guaranteed: z.enum(["yes", "partial", "no", "unknown"]),
@@ -93,7 +138,7 @@ export const ReviewDraft = z.object({
   line_items: z.array(LineItem),
   contract_total: z.number().nullable(),
   est_savings: z.number().nullable(),
-  red_flags: z.array(z.string()),
+  red_flags: z.array(RedFlag),
   ftc_issue: z.boolean(),
   preneed: PreneedTerms.nullable(),
   advice: z.string(),
@@ -101,6 +146,17 @@ export const ReviewDraft = z.object({
 
 export type ReviewDraft = z.infer<typeof ReviewDraft>;
 export type LineItem = z.infer<typeof LineItem>;
+export type RedFlag = z.infer<typeof RedFlag>;
+
+// Drafts saved before red-flag categories existed held plain strings; carry them over as "other".
+export function upgradeDraft(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object") return raw;
+  const d = raw as { red_flags?: unknown };
+  if (Array.isArray(d.red_flags)) {
+    d.red_flags = d.red_flags.map((f) => (typeof f === "string" ? { category: "other", note: f } : f));
+  }
+  return d;
+}
 
 export function emptyDraft(contractType: string): ReviewDraft {
   const type = (REVIEW_CONTRACT_TYPES as readonly string[]).includes(contractType)
@@ -139,7 +195,7 @@ export function sendBlockers(d: ReviewDraft): string[] {
 
 // Every free-text field that ends up in the training tables. All of it is PII-scanned before Send.
 export function trainingText(d: ReviewDraft): string {
-  return [d.advice, ...d.red_flags, ...d.line_items.flatMap((li) => [li.description, li.flag_reason ?? ""])].join("\n");
+  return [d.advice, ...d.red_flags.map((f) => f.note), ...d.line_items.flatMap((li) => [li.description, li.flag_reason ?? ""])].join("\n");
 }
 
 // What the family's review page shows. Stored on the submission (intake zone) for 30 days.
@@ -151,7 +207,7 @@ export type ReviewResult = {
   line_items: LineItem[];
   contract_total: number | null;
   est_savings: number | null;
-  red_flags: string[];
+  red_flags: RedFlag[];
   advice: string;
 };
 
@@ -164,7 +220,7 @@ export function toResult(d: ReviewDraft, sentAt: Date): ReviewResult {
     line_items: d.line_items,
     contract_total: d.contract_total,
     est_savings: d.est_savings,
-    red_flags: d.red_flags,
+    red_flags: d.red_flags.filter((f) => f.note.trim() || f.category !== "other"),
     advice: d.advice.trim(),
   };
 }
