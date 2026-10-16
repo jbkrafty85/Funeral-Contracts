@@ -12,6 +12,8 @@ export default async function ConsoleLayout({ children }: { children: React.Reac
       <nav className="console-nav">
         <div className="wrap wide">
           <Link href="/rep">Queue</Link>
+          <Link href="/rep/spotcheck">Spot check</Link>
+          {rep.role === "admin" && <Link href="/rep/admin/stats">Training data</Link>}
           {rep.role === "admin" && <Link href="/rep/admin/reps">Reviewers</Link>}
           <span className="spacer" />
           <span className="note">{rep.display_name} · {rep.reviewer_code}</span>

@@ -22,6 +22,9 @@ Build plan: https://claude.ai/artifact/9oaLEZXsQAMXKT1m3WSuDi — structure and 
 - Phase 3 — Send writes the training records (fresh ids, no link back), deletes the uploads, and
   emails/texts a link to `/r/<token>` (30 days). Daily cron `/api/cron/purge` (08:00 UTC, production
   only) wipes contact info 7 days after sending, result pages after 30, leftover/orphan uploads.
+- Phase 4 — `/rep/admin/stats` (admins): totals, reviews by contract month, prices by category,
+  sellers, top red flags, and JSONL / CSV export (leaves out spot-check "major" reviews).
+  `/rep/spotcheck`: ~10% of sent reviews are picked at Send for a second reviewer to grade.
 
 ## Setup (Vercel)
 

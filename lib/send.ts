@@ -56,11 +56,11 @@ export async function performSend(rep: Rep, id: string, body: unknown, requestUr
     db`INSERT INTO providers (name, type, city, state) VALUES (${name}, ${p.type}, ${city}, ${state})
        ON CONFLICT (name, city, state) DO UPDATE SET type = EXCLUDED.type`,
     db`INSERT INTO contract_reviews (id, provider_id, contract_month, contract_type, service_type,
-                                     contract_total, est_savings, reviewer_code, pii_check_passed)
+                                     contract_total, est_savings, reviewer_code, pii_check_passed, spot_check)
        SELECT ${reviewId},
               (SELECT id FROM providers WHERE name = ${name} AND city IS NOT DISTINCT FROM ${city} AND state IS NOT DISTINCT FROM ${state}),
               ${d.contract_month}, ${d.contract_type}, ${d.service_type},
-              ${d.contract_total}, ${d.est_savings}, ${rep.reviewer_code}, true
+              ${d.contract_total}, ${d.est_savings}, ${rep.reviewer_code}, true, random() < 0.1
        WHERE EXISTS (SELECT 1 FROM submissions WHERE id = ${id} AND result_token = ${token})`,
     ...d.line_items.map(
       (li) => db`INSERT INTO line_items (review_id, category, description, price, flagged, flag_reason)
